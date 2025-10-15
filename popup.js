@@ -1,14 +1,20 @@
 document.addEventListener("DOMContentLoaded", () => {
   const xbarToggle = document.getElementById("xbarToggle");
   const positionSelector = document.getElementById("position-selector");
+  const darkModeToggle = document.getElementById("darkmode-toggle");
 
-  // Check current state of the XBar feature and position
-  chrome.storage.local.get(["xbarEnabled", "sidebarPosition"], (data) => {
+  // Check current state of the XBar feature, position, and dark mode
+  chrome.storage.local.get(["xbarEnabled", "sidebarPosition", "darkModeEnabled"], (data) => {
     updateXbarToggleState(data.xbarEnabled);
     
     // Set position selector to saved value or default to left
     if (data.sidebarPosition) {
       positionSelector.value = data.sidebarPosition;
+    }
+
+    // Set dark mode checkbox
+    if (darkModeToggle) {
+      darkModeToggle.checked = !!data.darkModeEnabled;
     }
   });
   
@@ -40,6 +46,17 @@ document.addEventListener("DOMContentLoaded", () => {
       reloadXComTabs();
     });
   });
+
+  // Add event listener for dark mode toggle
+  if (darkModeToggle) {
+    darkModeToggle.addEventListener("change", () => {
+      const enabled = darkModeToggle.checked;
+      chrome.storage.local.set({ darkModeEnabled: enabled }, () => {
+        showStatusMessage(enabled ? "Dark mode enabled" : "Dark mode disabled");
+        reloadXComTabs();
+      });
+    });
+  }
   
   // Open options page on link click
   document.getElementById("options-link").addEventListener("click", (e) => {

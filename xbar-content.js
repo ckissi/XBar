@@ -19,18 +19,19 @@
   
   // Check if the XBar feature is enabled
   safelyAccessChromeAPI(() => {
-    chrome.storage.local.get(["xbarEnabled", "sidebarPosition"], (data) => {
+    chrome.storage.local.get(["xbarEnabled", "sidebarPosition", "darkModeEnabled"], (data) => {
       console.log("XBar enabled state:", data.xbarEnabled);
       console.log("Sidebar position:", data.sidebarPosition);
+      console.log("Dark mode:", data.darkModeEnabled);
       // If xbarEnabled is undefined (first install) or true, create the sidebar
       if (data.xbarEnabled === undefined || data.xbarEnabled) {
-        createSidebar(data.sidebarPosition || 'left');
+        createSidebar(data.sidebarPosition || 'left', !!data.darkModeEnabled);
       }
     });
   }, "checking if XBar is enabled");
 
   // Function to create and insert the sidebar
-  function createSidebar(position = 'left') {
+  function createSidebar(position = 'left', dark = false) {
     // Check if sidebar already exists to avoid duplicates
     if (document.getElementById('xbar-sidebar')) {
       return;
@@ -39,18 +40,23 @@
     // Create the sidebar container
     const sidebar = document.createElement('div');
     sidebar.id = 'xbar-sidebar';
+    if (dark) sidebar.classList.add('dark');
     
     // Add the styles for the sidebar
     const style = document.createElement('style');
     style.textContent = `
       #xbar-sidebar {
+        --xbar-bg: #ffffff;
+        --xbar-border: #e6ecf0;
+        --xbar-hover: #f5f8fa;
+        --xbar-text: #14171a;
         position: fixed;
         top: 0;
         ${position === 'right' ? 'right: 0;' : 'left: 0;'}
         height: 100vh;
         width: 70px;
-        background-color: #ffffff;
-        border-${position === 'right' ? 'left' : 'right'}: 1px solid #e6ecf0;
+        background-color: var(--xbar-bg);
+        border-${position === 'right' ? 'left' : 'right'}: 1px solid var(--xbar-border);
         z-index: 9999;
         overflow-y: auto;
         display: flex;
@@ -59,6 +65,13 @@
         padding-top: 10px;
         box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      }
+
+      #xbar-sidebar.dark {
+        --xbar-bg: #0f1419;
+        --xbar-border: #273340;
+        --xbar-hover: #161d26;
+        --xbar-text: #e6edf3;
       }
       
       .xbar-account {
@@ -73,7 +86,7 @@
       }
       
       .xbar-account:hover {
-        background-color: #f5f8fa;
+        background-color: var(--xbar-hover);
       }
       
       .xbar-account-icon {
@@ -83,12 +96,12 @@
         background-size: cover;
         background-position: center;
         margin-bottom: 5px;
-        border: 1px solid #e6ecf0;
+        border: 1px solid var(--xbar-border);
       }
       
       .xbar-account-name {
         font-size: 10px;
-        color: #14171a;
+        color: var(--xbar-text);
         text-align: center;
         max-width: 60px;
         overflow: hidden;
@@ -187,9 +200,9 @@
   // Handle navigation between pages (for SPAs like x.com)
   window.addEventListener('popstate', () => {
     safelyAccessChromeAPI(() => {
-      chrome.storage.local.get(["xbarEnabled", "sidebarPosition"], (data) => {
+      chrome.storage.local.get(["xbarEnabled", "sidebarPosition", "darkModeEnabled"], (data) => {
         if (data.xbarEnabled === undefined || data.xbarEnabled) {
-          createSidebar(data.sidebarPosition || 'left');
+          createSidebar(data.sidebarPosition || 'left', !!data.darkModeEnabled);
         }
       });
     }, "handling page navigation");
@@ -198,9 +211,9 @@
   // Also look for dynamic content changes that might indicate page navigation
   const contentObserver = new MutationObserver((mutations) => {
     safelyAccessChromeAPI(() => {
-      chrome.storage.local.get(["xbarEnabled", "sidebarPosition"], (data) => {
+      chrome.storage.local.get(["xbarEnabled", "sidebarPosition", "darkModeEnabled"], (data) => {
         if (data.xbarEnabled === undefined || data.xbarEnabled) {
-          createSidebar(data.sidebarPosition || 'left');
+          createSidebar(data.sidebarPosition || 'left', !!data.darkModeEnabled);
         }
       });
     }, "checking after DOM mutation");

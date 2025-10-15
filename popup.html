@@ -42,6 +42,10 @@
             margin-top: 0;
             margin-bottom: 15px;
         }
+
+        .row {
+            margin-top: 8px;
+        }
     </style>
 </head>
 
@@ -49,10 +53,18 @@
     <h1>XBar</h1>
     <button id="xbarToggle">Disable XBar</button>
     
-<select id="position-selector">
+    <select id="position-selector" class="row">
         <option value="left">Left</option>
         <option value="right">Right</option>
     </select>
+
+    <div class="row">
+        <label>
+            <input type="checkbox" id="darkmode-toggle" />
+            Dark mode
+        </label>
+    </div>
+
     <div style="margin-top: 15px; text-align: center;">
         <a href="#" id="options-link" style="color: #1DA1F2; text-decoration: none;">Manage Accounts</a>
     </div>
