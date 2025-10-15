@@ -12,6 +12,7 @@ X Bar is a Chrome extension that adds a compact account launcher to every page o
 - **Quick profile switching** – Clicking an entry navigates to `https://x.com/<handle>` immediately.
 - **Configurable placement** – Choose whether the sidebar pins to the left or right edge via the popup (`popup.html`/`popup.js`).
 - **Enable/disable toggle** – Temporarily hide the sidebar without uninstalling, using the popup toggle backed by `chrome.storage.local`.
+- **Dark mode** – Toggle a darker theme for the sidebar from the popup. Persisted per-browser via `chrome.storage.local`.
 
 ## Installation
 
@@ -27,7 +28,9 @@ X Bar is a Chrome extension that adds a compact account launcher to every page o
 
 - Open the extensions toolbar icon and click X Bar.
 - Use the **Enable XBar** button to activate the sidebar (enabled by default).
-- Choose **Left** or **Right** placement from the dropdown. Any change reloads open `x.com` tabs so the sidebar reflects the new position.
+- Choose **Left** or **Right** placement from the dropdown.
+- Toggle the **Dark mode** checkbox to switch the sidebar theme.
+- Any change reloads open `x.com` tabs so the sidebar reflects the new position/theme.
 
 ### 2. Add accounts
 
@@ -49,9 +52,9 @@ X Bar is a Chrome extension that adds a compact account launcher to every page o
 
 ## Settings & Storage
 
-- Preferences (`xbarEnabled`, `sidebarPosition`) and the account list persist in `chrome.storage.local`.
-- The background service worker (`background.js`) enables the sidebar by default on install.
-- The popup reloads open `x.com` tabs whenever you toggle the sidebar or change its position so the injected UI updates immediately.
+- Preferences (`xbarEnabled`, `sidebarPosition`, `darkModeEnabled`) and the account list persist in `chrome.storage.local`.
+- On install, the background service worker (`background.js`) initializes defaults without overwriting existing preferences: `xbarEnabled: true`, `sidebarPosition: "left"`, `darkModeEnabled: false`.
+- The popup reloads open `x.com` tabs whenever you toggle the sidebar, change position, or toggle dark mode so the injected UI updates immediately.
 
 ## Permissions Explained
 
@@ -70,6 +73,7 @@ X Bar is a Chrome extension that adds a compact account launcher to every page o
 - **Sidebar not visible**: Open the popup and ensure the toggle is set to **Disable XBar** (meaning it is currently enabled). Refresh the current `x.com` tab.
 - **Accounts missing**: Reopen the options page to confirm your accounts are listed. If not, re-add them or check Chrome's site-storage settings.
 - **Profile info fails to load**: Verify internet connectivity. Retry adding the account later.
+- **Dark mode not applying**: Toggle the Dark mode checkbox off/on in the popup or refresh the tab.
 
 ## Support
 
