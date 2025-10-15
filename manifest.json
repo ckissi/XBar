@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "X Bar - Account Sidebar",
+  "version": "1.0",
+  "description": "Adds a sidebar to x.com to display account icons and names.",
+  "permissions": [
+    "storage",
+    "tabs"
+  ],
+  "host_permissions": [
+    "*://x.com/*",
+    "*://*.x.com/*",
+    "*://api.fxtwitter.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["*://x.com/*", "*://*.x.com/*"],
+      "js": ["xbar-content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "options_page": "options.html",
+  "background": {
+    "service_worker": "background.js"
+  },
+  "icons": {
+    "16": "assets/icon16.png",
+    "48": "assets/icon48.png",
+    "128": "assets/icon128.png"
+  }
+}
