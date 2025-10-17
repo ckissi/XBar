@@ -8,6 +8,9 @@ Highlights:
 - Choose whether the sidebar lives on the left or right edge of the page.
 - Toggle the entire experience on or off without uninstalling the extension.
 - Prevent duplicate accounts automatically so the list stays tidy.
+- New: Dark mode for comfortable low-light browsing.
+- New: Multi-column layout to see more accounts at once.
+- New: Choose whether to display the profile’s real name or @handle in the sidebar.
 
 How it works:
 1. Install the extension and open any page on x.com.

@@ -20,12 +20,19 @@ Elevate your Twitter experience with the XBar Chrome Extension! Seamlessly manag
 
 - **Duplicate Prevention**: Automatically tracks existing accounts to prevent inadvertent duplicates.
 
+- **Dark Mode**: Switch to a dark theme for comfortable use in low-light environments.
+
+- **Multi-Column Layout**: View accounts in multiple columns to see more at a glance.
+
+- **Name Display Preference**: Choose whether to show the profile’s real name or the @handle in the sidebar.
+
 ## How to Use:
 1. Navigate to x.com and log in to your Twitter account(s).
 2. Open the XBar sidebar from the browser’s extension area.
 3. Add new accounts by entering their handle or URL.
 4. Use the drag-and-drop feature to reorder accounts as desired.
 5. Click an account in the sidebar to switch profiles quickly.
+6. Configure appearance and layout: toggle dark mode, choose name vs. @handle display, and set the number of columns from the extension’s options.
 
 ## Support:
 For any questions or assistance, please contact our support team or visit our [support page](#).

@@ -13,6 +13,8 @@ X Bar is a Chrome extension that adds a compact account launcher to every page o
 - **Configurable placement** – Choose whether the sidebar pins to the left or right edge via the popup (`popup.html`/`popup.js`).
 - **Enable/disable toggle** – Temporarily hide the sidebar without uninstalling, using the popup toggle backed by `chrome.storage.local`.
 - **Dark mode** – Toggle a darker theme for the sidebar from the popup. Persisted per-browser via `chrome.storage.local`.
+- **Multi-column layout** – View more accounts at once with an optional multi-column sidebar layout.
+- **Name display preference** – Choose whether to show the profile’s real name or @handle in the sidebar.
 
 ## Installation
 
@@ -30,7 +32,8 @@ X Bar is a Chrome extension that adds a compact account launcher to every page o
 - Use the **Enable XBar** button to activate the sidebar (enabled by default).
 - Choose **Left** or **Right** placement from the dropdown.
 - Toggle the **Dark mode** checkbox to switch the sidebar theme.
-- Any change reloads open `x.com` tabs so the sidebar reflects the new position/theme.
+- Configure multi-column layout and name/@handle display from the Options page.
+- Any change reloads open `x.com` tabs so the sidebar reflects updated position, theme, layout, and name display.
 
 ### 2. Add accounts
 
@@ -52,9 +55,9 @@ X Bar is a Chrome extension that adds a compact account launcher to every page o
 
 ## Settings & Storage
 
-- Preferences (`xbarEnabled`, `sidebarPosition`, `darkModeEnabled`) and the account list persist in `chrome.storage.local`.
-- On install, the background service worker (`background.js`) initializes defaults without overwriting existing preferences: `xbarEnabled: true`, `sidebarPosition: "left"`, `darkModeEnabled: false`.
-- The popup reloads open `x.com` tabs whenever you toggle the sidebar, change position, or toggle dark mode so the injected UI updates immediately.
+- Preferences (enabled state, sidebar position, theme, layout, and name/@handle display) and the account list persist in `chrome.storage.local`.
+- On install, the background service worker (`background.js`) initializes sensible defaults and never overwrites existing preferences.
+- Open `x.com` tabs are reloaded when settings change so the injected UI updates immediately.
 
 ## Permissions Explained
 

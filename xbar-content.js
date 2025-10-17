@@ -4,34 +4,96 @@
   if (!window.location.hostname.includes('x.com')) {
     return;
   }
+  // Prevent multiple instances in the same page
+  try {
+    if (window.__XBAR_V3_ACTIVE__) return;
+    window.__XBAR_V3_ACTIVE__ = true;
+  } catch (_) {}
+
+  // Global guard flag to stop work if the extension context becomes invalid
+  let EXT_CONTEXT_INVALID = false;
+  let LOGGED_INVALIDATION = false;
+  let sidebarObserver = null;
+  let scheduleTimer = null;
+
+  function invalidateAndStop() {
+    if (EXT_CONTEXT_INVALID) return;
+    EXT_CONTEXT_INVALID = true;
+    try { if (contentObserver) contentObserver.disconnect(); } catch (_) {}
+    try { if (sidebarObserver) sidebarObserver.disconnect(); } catch (_) {}
+    try { if (scheduleTimer) { clearTimeout(scheduleTimer); scheduleTimer = null; } } catch (_) {}
+    if (!LOGGED_INVALIDATION) {
+      // Silently mark invalidation to avoid noisy console logs
+      LOGGED_INVALIDATION = true;
+    }
+  }
+
+  // Lightweight debounce utility to avoid spamming chrome.* from mutation observers
+  function debounce(fn, wait) {
+    let t;
+    return (...args) => {
+      if (EXT_CONTEXT_INVALID) return;
+      clearTimeout(t);
+      t = setTimeout(() => {
+        if (EXT_CONTEXT_INVALID || !isExtensionContextValid()) return;
+        try {
+          fn.apply(null, args);
+        } catch (e) {
+          const msg = String(e).toLowerCase();
+          if (msg.includes('invalidat')) {
+            invalidateAndStop();
+            return;
+          }
+          console.error('XBar: unexpected error in debounced task', e);
+        }
+      }, wait);
+    };
+  }
+
+  // Check if we can safely call chrome.* APIs
+  function isExtensionContextValid() {
+    try {
+      return typeof chrome !== 'undefined' && !!chrome?.runtime?.id && !!chrome?.storage?.local;
+    } catch (_) {
+      return false;
+    }
+  }
 
   // Helper function to safely access Chrome APIs with logging
   function safelyAccessChromeAPI(callback, operationDescription = "") {
+    if (EXT_CONTEXT_INVALID) return;
+    
+    // Pre-check before attempting any chrome.* calls
+    if (!isExtensionContextValid()) {
+      invalidateAndStop();
+      return;
+    }
+    
     try {
-      if (chrome && chrome.storage && chrome.storage.local) {
-        console.log(`Accessing Chrome API: ${operationDescription}`);
-        callback();
-      }
+      callback();
     } catch (error) {
-      console.error(`Error accessing Chrome API during ${operationDescription}:`, error);
+      const msg = String(error).toLowerCase();
+      if (msg.includes('invalidat')) {
+        invalidateAndStop();
+        return;
+      }
+      // Only log if we're still valid and this is an unexpected error
+      if (!EXT_CONTEXT_INVALID) {
+        console.error(`XBar: error during ${operationDescription}:`, error);
+      }
     }
   }
   
   // Check if the XBar feature is enabled
   safelyAccessChromeAPI(() => {
     chrome.storage.local.get(["xbarEnabled", "sidebarPosition", "darkModeEnabled", "columns", "useFirstName"], (data) => {
-      console.log("XBar enabled state:", data.xbarEnabled);
-      console.log("Sidebar position:", data.sidebarPosition);
-      console.log("Dark mode:", data.darkModeEnabled);
-      console.log("Columns:", data.columns);
-      console.log("Use first name:", data.useFirstName);
       // If xbarEnabled is undefined (first install) or true, create the sidebar
       if (data.xbarEnabled === undefined || data.xbarEnabled) {
         const cols = Math.min(3, Math.max(1, parseInt(data.columns || 1, 10)));
         createSidebar(data.sidebarPosition || 'left', !!data.darkModeEnabled, cols, !!data.useFirstName);
       }
     });
-  }, "checking if XBar is enabled");
+  }, "initializing XBar");
 
   // Function to create and insert the sidebar
   function createSidebar(position = 'left', dark = false, columns = 1, useFirstName = false) {
@@ -197,8 +259,7 @@
     loadAccounts();
     
     // Set up a mutation observer to detect changes in the sidebar
-    const observer = new MutationObserver((mutations) => {
-      // Check if new accounts have been added to the page
+    sidebarObserver = new MutationObserver(() => {
       const accountsContainer = document.querySelector('#xbar-sidebar');
       if (accountsContainer && accountsContainer.children.length === 0) {
         loadAccounts();
@@ -206,33 +267,56 @@
     });
     
     // Start observing the document with the configured parameters
-    observer.observe(document.body, { childList: true, subtree: true });
+    sidebarObserver.observe(document.body, { childList: true, subtree: true });
   }
   
   // Create the sidebar when DOM is fully loaded is now handled in the chrome.storage.local.get callback
   
+  // Centralized, debounced check used by navigation + DOM observers
+  function scheduleSidebarCheck() {
+    if (EXT_CONTEXT_INVALID) return;
+    if (scheduleTimer) clearTimeout(scheduleTimer);
+    scheduleTimer = setTimeout(() => {
+      if (EXT_CONTEXT_INVALID || !isExtensionContextValid()) return;
+      safelyAccessChromeAPI(() => {
+        chrome.storage.local.get(["xbarEnabled", "sidebarPosition", "darkModeEnabled", "columns", "useFirstName"], (data) => {
+          if (data.xbarEnabled === undefined || data.xbarEnabled) {
+            const cols = Math.min(3, Math.max(1, parseInt(data.columns || 1, 10)));
+            createSidebar(data.sidebarPosition || 'left', !!data.darkModeEnabled, cols, !!data.useFirstName);
+          }
+        });
+      }, "scheduled sidebar check");
+    }, 250);
+  }
+
   // Handle navigation between pages (for SPAs like x.com)
-  window.addEventListener('popstate', () => {
-    safelyAccessChromeAPI(() => {
-      chrome.storage.local.get(["xbarEnabled", "sidebarPosition", "darkModeEnabled", "columns", "useFirstName"], (data) => {
-        if (data.xbarEnabled === undefined || data.xbarEnabled) {
-          const cols = Math.min(3, Math.max(1, parseInt(data.columns || 1, 10)));
-          createSidebar(data.sidebarPosition || 'left', !!data.darkModeEnabled, cols, !!data.useFirstName);
-        }
-      });
-    }, "handling page navigation");
-  });
+  function onLocationChange() {
+    scheduleSidebarCheck();
+  }
+
+  // Fire on back/forward
+  window.addEventListener('popstate', onLocationChange);
+
+  // Also dispatch on pushState/replaceState
+  (function patchHistory() {
+    const push = history.pushState;
+    const replace = history.replaceState;
+    history.pushState = function() {
+      const r = push.apply(this, arguments);
+      window.dispatchEvent(new Event('locationchange'));
+      return r;
+    };
+    history.replaceState = function() {
+      const r = replace.apply(this, arguments);
+      window.dispatchEvent(new Event('locationchange'));
+      return r;
+    };
+  })();
+  window.addEventListener('locationchange', onLocationChange);
   
-  // Also look for dynamic content changes that might indicate page navigation
-  const contentObserver = new MutationObserver((mutations) => {
-    safelyAccessChromeAPI(() => {
-      chrome.storage.local.get(["xbarEnabled", "sidebarPosition", "darkModeEnabled", "columns", "useFirstName"], (data) => {
-        if (data.xbarEnabled === undefined || data.xbarEnabled) {
-          const cols = Math.min(3, Math.max(1, parseInt(data.columns || 1, 10)));
-          createSidebar(data.sidebarPosition || 'left', !!data.darkModeEnabled, cols, !!data.useFirstName);
-        }
-      });
-    }, "checking after DOM mutation");
+  // Observe DOM changes but debounced to avoid excessive chrome.* calls
+  let contentObserver = new MutationObserver(() => {
+    scheduleSidebarCheck();
   });
   
   // Start observing once the body is available
@@ -243,4 +327,9 @@
       contentObserver.observe(document.body, { childList: true, subtree: true });
     });
   }
+
+  // Stop work on unload to reduce chances of post-unload API calls
+  window.addEventListener('beforeunload', () => { 
+    invalidateAndStop();
+  });
 })();
