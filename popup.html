@@ -46,6 +46,17 @@
         .row {
             margin-top: 8px;
         }
+
+        label.select-label {
+            display: block;
+            font-size: 12px;
+            color: #555;
+            margin-bottom: 4px;
+        }
+
+        select {
+            width: 100%;
+        }
     </style>
 </head>
 
@@ -53,15 +64,34 @@
     <h1>XBar</h1>
     <button id="xbarToggle">Disable XBar</button>
     
-    <select id="position-selector" class="row">
-        <option value="left">Left</option>
-        <option value="right">Right</option>
-    </select>
+    <div class="row">
+        <label class="select-label" for="position-selector">Position</label>
+        <select id="position-selector">
+            <option value="left">Left</option>
+            <option value="right">Right</option>
+        </select>
+    </div>
+
+    <div class="row">
+        <label class="select-label" for="columns-selector">Columns</label>
+        <select id="columns-selector">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+        </select>
+    </div>
 
     <div class="row">
         <label>
             <input type="checkbox" id="darkmode-toggle" />
             Dark mode
+        </label>
+    </div>
+
+    <div class="row">
+        <label>
+            <input type="checkbox" id="firstname-toggle" />
+            Show first name
         </label>
     </div>
 

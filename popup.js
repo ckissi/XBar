@@ -1,10 +1,12 @@
 document.addEventListener("DOMContentLoaded", () => {
   const xbarToggle = document.getElementById("xbarToggle");
   const positionSelector = document.getElementById("position-selector");
+  const columnsSelector = document.getElementById("columns-selector");
   const darkModeToggle = document.getElementById("darkmode-toggle");
+  const firstNameToggle = document.getElementById("firstname-toggle");
 
-  // Check current state of the XBar feature, position, and dark mode
-  chrome.storage.local.get(["xbarEnabled", "sidebarPosition", "darkModeEnabled"], (data) => {
+  // Check current state of the XBar feature, position, columns, dark mode, and name preference
+  chrome.storage.local.get(["xbarEnabled", "sidebarPosition", "darkModeEnabled", "columns", "useFirstName"], (data) => {
     updateXbarToggleState(data.xbarEnabled);
     
     // Set position selector to saved value or default to left
@@ -12,9 +14,20 @@ document.addEventListener("DOMContentLoaded", () => {
       positionSelector.value = data.sidebarPosition;
     }
 
+    // Set columns selector (default 1)
+    if (columnsSelector) {
+      const cols = Math.min(3, Math.max(1, parseInt(data.columns || 1, 10)));
+      columnsSelector.value = String(cols);
+    }
+
     // Set dark mode checkbox
     if (darkModeToggle) {
       darkModeToggle.checked = !!data.darkModeEnabled;
+    }
+
+    // Set first name checkbox
+    if (firstNameToggle) {
+      firstNameToggle.checked = !!data.useFirstName;
     }
   });
   
@@ -47,12 +60,35 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  // Add event listener for columns selector
+  if (columnsSelector) {
+    columnsSelector.addEventListener("change", () => {
+      let cols = parseInt(columnsSelector.value, 10) || 1;
+      cols = Math.min(3, Math.max(1, cols));
+      chrome.storage.local.set({ columns: cols }, () => {
+        showStatusMessage(`Columns set to ${cols}`);
+        reloadXComTabs();
+      });
+    });
+  }
+
   // Add event listener for dark mode toggle
   if (darkModeToggle) {
     darkModeToggle.addEventListener("change", () => {
       const enabled = darkModeToggle.checked;
       chrome.storage.local.set({ darkModeEnabled: enabled }, () => {
         showStatusMessage(enabled ? "Dark mode enabled" : "Dark mode disabled");
+        reloadXComTabs();
+      });
+    });
+  }
+
+  // Add event listener for first name toggle
+  if (firstNameToggle) {
+    firstNameToggle.addEventListener("change", () => {
+      const useFirstName = firstNameToggle.checked;
+      chrome.storage.local.set({ useFirstName }, () => {
+        showStatusMessage(useFirstName ? "Showing first name" : "Showing screen name");
         reloadXComTabs();
       });
     });

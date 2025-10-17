@@ -19,28 +19,37 @@
   
   // Check if the XBar feature is enabled
   safelyAccessChromeAPI(() => {
-    chrome.storage.local.get(["xbarEnabled", "sidebarPosition", "darkModeEnabled"], (data) => {
+    chrome.storage.local.get(["xbarEnabled", "sidebarPosition", "darkModeEnabled", "columns", "useFirstName"], (data) => {
       console.log("XBar enabled state:", data.xbarEnabled);
       console.log("Sidebar position:", data.sidebarPosition);
       console.log("Dark mode:", data.darkModeEnabled);
+      console.log("Columns:", data.columns);
+      console.log("Use first name:", data.useFirstName);
       // If xbarEnabled is undefined (first install) or true, create the sidebar
       if (data.xbarEnabled === undefined || data.xbarEnabled) {
-        createSidebar(data.sidebarPosition || 'left', !!data.darkModeEnabled);
+        const cols = Math.min(3, Math.max(1, parseInt(data.columns || 1, 10)));
+        createSidebar(data.sidebarPosition || 'left', !!data.darkModeEnabled, cols, !!data.useFirstName);
       }
     });
   }, "checking if XBar is enabled");
 
   // Function to create and insert the sidebar
-  function createSidebar(position = 'left', dark = false) {
+  function createSidebar(position = 'left', dark = false, columns = 1, useFirstName = false) {
     // Check if sidebar already exists to avoid duplicates
     if (document.getElementById('xbar-sidebar')) {
       return;
     }
 
+    // Ensure columns is 1..3
+    const cols = Math.min(3, Math.max(1, parseInt(columns || 1, 10)));
+    const COL_WIDTH = 70; // px
+    const sidebarWidth = COL_WIDTH * cols;
+
     // Create the sidebar container
     const sidebar = document.createElement('div');
     sidebar.id = 'xbar-sidebar';
     if (dark) sidebar.classList.add('dark');
+    sidebar.setAttribute('data-columns', String(cols));
     
     // Add the styles for the sidebar
     const style = document.createElement('style');
@@ -54,15 +63,20 @@
         top: 0;
         ${position === 'right' ? 'right: 0;' : 'left: 0;'}
         height: 100vh;
-        width: 70px;
+        width: ${sidebarWidth}px;
         background-color: var(--xbar-bg);
         border-${position === 'right' ? 'left' : 'right'}: 1px solid var(--xbar-border);
         z-index: 9999;
         overflow-y: auto;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        padding-top: 10px;
+        overflow-x: hidden;
+        box-sizing: border-box;
+        display: grid;
+        grid-auto-flow: row;
+        grid-template-columns: repeat(${cols}, ${COL_WIDTH}px);
+        align-content: start; /* keep items at the top when multiple rows */
+        justify-items: center;
+        padding: 10px 0 10px 0;
+        gap: 8px 0;
         box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
       }
@@ -78,7 +92,6 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        margin-bottom: 15px;
         cursor: pointer;
         width: 100%;
         padding: 5px 0;
@@ -111,7 +124,7 @@
       
       /* Adjust the main content to make room for sidebar */
       body {
-        margin-${position === 'right' ? 'right' : 'left'}: 70px !important;
+        margin-${position === 'right' ? 'right' : 'left'}: ${sidebarWidth}px !important;
       }
     `;
     
@@ -147,7 +160,7 @@
             const placeholderElement = document.createElement('div');
             placeholderElement.className = 'xbar-account';
             placeholderElement.innerHTML = `
-              <div class="xbar-account-name" style="padding: 15px 5px; text-align: center;">No accounts added. Open extension options to add accounts.</div>
+              <div class=\"xbar-account-name\" style=\"padding: 15px 5px; text-align: center;\">No accounts added. Open extension options to add accounts.</div>
             `;
             sidebar.appendChild(placeholderElement);
           } else {
@@ -163,7 +176,8 @@
               
               const nameElement = document.createElement('div');
               nameElement.className = 'xbar-account-name';
-              nameElement.textContent = account.screen_name;
+              const firstName = (account.name || '').trim().split(/\s+/)[0] || account.screen_name;
+              nameElement.textContent = useFirstName ? firstName : account.screen_name;
               
               accountElement.appendChild(iconElement);
               accountElement.appendChild(nameElement);
@@ -200,9 +214,10 @@
   // Handle navigation between pages (for SPAs like x.com)
   window.addEventListener('popstate', () => {
     safelyAccessChromeAPI(() => {
-      chrome.storage.local.get(["xbarEnabled", "sidebarPosition", "darkModeEnabled"], (data) => {
+      chrome.storage.local.get(["xbarEnabled", "sidebarPosition", "darkModeEnabled", "columns", "useFirstName"], (data) => {
         if (data.xbarEnabled === undefined || data.xbarEnabled) {
-          createSidebar(data.sidebarPosition || 'left', !!data.darkModeEnabled);
+          const cols = Math.min(3, Math.max(1, parseInt(data.columns || 1, 10)));
+          createSidebar(data.sidebarPosition || 'left', !!data.darkModeEnabled, cols, !!data.useFirstName);
         }
       });
     }, "handling page navigation");
@@ -211,9 +226,10 @@
   // Also look for dynamic content changes that might indicate page navigation
   const contentObserver = new MutationObserver((mutations) => {
     safelyAccessChromeAPI(() => {
-      chrome.storage.local.get(["xbarEnabled", "sidebarPosition", "darkModeEnabled"], (data) => {
+      chrome.storage.local.get(["xbarEnabled", "sidebarPosition", "darkModeEnabled", "columns", "useFirstName"], (data) => {
         if (data.xbarEnabled === undefined || data.xbarEnabled) {
-          createSidebar(data.sidebarPosition || 'left', !!data.darkModeEnabled);
+          const cols = Math.min(3, Math.max(1, parseInt(data.columns || 1, 10)));
+          createSidebar(data.sidebarPosition || 'left', !!data.darkModeEnabled, cols, !!data.useFirstName);
         }
       });
     }, "checking after DOM mutation");
