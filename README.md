@@ -15,6 +15,7 @@ X Bar is a Chrome extension that adds a compact account launcher to every page o
 - **Dark mode** – Toggle a darker theme for the sidebar from the popup. Persisted per-browser via `chrome.storage.local`.
 - **Multi-column layout** – View more accounts at once with an optional multi-column sidebar layout.
 - **Name display preference** – Choose whether to show the profile’s real name or @handle in the sidebar.
+- **Import/Export accounts** – Backup or migrate your list as JSON from the Options page; duplicates are skipped on import.
 
 ## Installation
 
@@ -45,6 +46,8 @@ X Bar is a Chrome extension that adds a compact account launcher to every page o
 
 - **Reorder**: Drag the handle (`::`) beside any account card to rearrange the sidebar order.
 - **Remove**: Click **Remove** to delete an entry from storage.
+- **Export**: Click **Export Accounts** to download a JSON backup of your list.
+- **Import**: Click **Import Accounts** and choose a previously exported JSON file; existing entries are preserved and duplicates are skipped.
 - The extension automatically filters exact duplicates when loading or adding accounts.
 
 ### 4. Browse with the sidebar

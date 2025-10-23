@@ -11,12 +11,14 @@ Highlights:
 - New: Dark mode for comfortable low-light browsing.
 - New: Multi-column layout to see more accounts at once.
 - New: Choose whether to display the profile’s real name or @handle in the sidebar.
+- New: Import/export your account list as JSON for quick backup or migration (duplicates are skipped on import).
 
 How it works:
 1. Install the extension and open any page on x.com.
 2. Add accounts from the options page using a handle, @handle, or full profile URL. X Bar fetches avatars and names automatically.
 3. Reorder or remove accounts anytime. Changes sync instantly across every X tab.
-4. Click an avatar in the sidebar to open that profile immediately in the current tab.
+4. Export your list as JSON or import a previously saved file from the Options page.
+5. Click an avatar in the sidebar to open that profile immediately in the current tab.
 
 Permissions:
 - Storage access keeps your account list, sidebar position, and toggle state on your device.
