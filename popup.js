@@ -128,5 +128,10 @@ function updateXbarToggleState(xbarEnabled) {
   if (!button) return;
   
   button.textContent = xbarEnabled ? "Disable XBar" : "Enable XBar";
-  button.className = xbarEnabled ? "" : "inactive";
+  // Toggle danger style when disabled request is next
+  if (xbarEnabled) {
+    button.classList.remove("inactive");
+  } else {
+    button.classList.add("inactive");
+  }
 }
