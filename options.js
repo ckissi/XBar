@@ -266,4 +266,89 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
   });
+
+  // Export accounts to JSON
+  document.getElementById("export-accounts").addEventListener("click", () => {
+    chrome.storage.local.get("accounts", (data) => {
+      const accounts = data.accounts || [];
+      if (accounts.length === 0) {
+        showStatus("No accounts to export.", false);
+        return;
+      }
+
+      const jsonString = JSON.stringify(accounts, null, 2);
+      const blob = new Blob([jsonString], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `xbar-accounts-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      showStatus(`Exported ${accounts.length} account(s).`, true);
+    });
+  });
+
+  // Import accounts from JSON
+  document.getElementById("import-accounts").addEventListener("click", () => {
+    document.getElementById("import-file").click();
+  });
+
+  document.getElementById("import-file").addEventListener("change", (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const importedAccounts = JSON.parse(e.target.result);
+        
+        // Validate imported data
+        if (!Array.isArray(importedAccounts)) {
+          showStatus("Invalid JSON format. Expected an array of accounts.", false);
+          return;
+        }
+
+        // Validate account structure
+        const isValid = importedAccounts.every(account => 
+          account.name && account.screen_name && account.avatar_url
+        );
+        
+        if (!isValid) {
+          showStatus("Invalid account data. Each account must have name, screen_name, and avatar_url.", false);
+          return;
+        }
+
+        chrome.storage.local.get("accounts", (data) => {
+          const existingAccounts = data.accounts || [];
+          const existingScreenNames = new Set(
+            existingAccounts.map(acc => acc.screen_name.toLowerCase())
+          );
+          
+          // Filter out duplicates from imported accounts
+          const newAccounts = importedAccounts.filter(account => 
+            !existingScreenNames.has(account.screen_name.toLowerCase())
+          );
+          
+          if (newAccounts.length === 0) {
+            showStatus("All imported accounts already exist.", false);
+            return;
+          }
+          
+          const mergedAccounts = [...existingAccounts, ...newAccounts];
+          chrome.storage.local.set({ accounts: mergedAccounts }, () => {
+            renderAccounts(mergedAccounts);
+            showStatus(`Imported ${newAccounts.length} new account(s). ${importedAccounts.length - newAccounts.length} duplicate(s) skipped.`, true);
+          });
+        });
+      } catch (error) {
+        showStatus("Failed to parse JSON file. Please check the file format.", false);
+        console.error("Import error:", error);
+      }
+    };
+    reader.readAsText(file);
+    // Reset file input
+    event.target.value = "";
+  });
 });
